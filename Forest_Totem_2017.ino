@@ -152,7 +152,7 @@ void loop(){
    }
 
    // Whatever else you would normally have running in loop().
-   if(locateComplete && avgAnalogVal<=200)
+   if(locateComplete && avgAnalogVal<=100)
    {
       //Serial.println(avgAnalogVal);
       locateComplete = 0;
@@ -216,6 +216,10 @@ void centerOut(){
    static uint8_t pixelUp = NUM_PIXELS/2;
    static uint8_t pixelDown = (NUM_PIXELS/2)-1;
    static uint8_t counter = 0;
+   static uint8_t modeState = 0;
+#if defined ( SERIAL_DEBUG_ENABLE )
+   Serial.println("centerOut!");
+#endif
    if((pixelUp == NUM_PIXELS/2 ) && ( NUM_PIXELS%2 )){
       strip.setPixelColor(pixelUp++,currentColor);
    }
@@ -230,11 +234,38 @@ void centerOut(){
    Serial.println("");
 #endif
    strip.show();
-   if(pixelUp >= NUM_PIXELS){
+   if((pixelUp >= NUM_PIXELS) && (modeState == 0)){
+      modeState++;
+      interval = 150;
+      clearStrand();
+   }
+   else if((pixelUp >= NUM_PIXELS) && ((modeState%2) == 1)){
+      modeState++;
+      for(int i=0;i<NUM_PIXELS;i++){
+         strip.setPixelColor(i, currentColor);
+      }
+      if(modeState>=8)
+      {
+         modeState = 10;
+      }
+   }
+   else if((pixelUp >= NUM_PIXELS) && ((modeState%2) == 0)){
+      modeState++;
+      clearStrand();
+   }
+#if defined ( SERIAL_DEBUG_ENABLE )
+   Serial.print("modeState: ");
+   Serial.println(modeState);
+#endif
+
+
+   if((pixelUp >= NUM_PIXELS) && (modeState == 10)){
       pixelUp=NUM_PIXELS/2;
       pixelDown=(NUM_PIXELS/2)-1;
       counter++;
       clearStrand();
+      modeState = 0;
+      interval = 20;
       currentColor = colorArray[(++colorCounter%NUM_COLORS)];
 #if defined ( SERIAL_DEBUG_ENABLE )
       Serial.print("Locate Cnt: ");
