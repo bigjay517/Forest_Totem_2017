@@ -115,10 +115,10 @@ void setup(){
    colorArray[5] = strip.Color(0,32,32);
    */
 
-   colorArray[0] = strip.Color(0,135,68);
-   colorArray[1] = strip.Color(0,87,231);
-   colorArray[2] = strip.Color(214,45,32);
-   colorArray[3] = strip.Color(255,167,0);
+   colorArray[0] = strip.Color(255,0,0);
+   colorArray[1] = strip.Color(0,0,255);
+   colorArray[2] = strip.Color(128,128,0);
+   colorArray[3] = strip.Color(0,255,0);
 
 
    currentColor = colorArray[0];
@@ -152,7 +152,7 @@ void loop(){
    }
 
    // Whatever else you would normally have running in loop().
-   if(locateComplete && avgAnalogVal<=300)
+   if(locateComplete && avgAnalogVal<=200)
    {
       //Serial.println(avgAnalogVal);
       locateComplete = 0;
@@ -261,7 +261,7 @@ void colorWipe(){
       counter++;
       currentColor = colorArray[(++colorCounter%NUM_COLORS)];
    }
-   if(counter >= 10){
+   if(counter >= 20){
 #if defined ( SERIAL_DEBUG_ENABLE )
       Serial.println("Wipe Reset!");
 #endif
