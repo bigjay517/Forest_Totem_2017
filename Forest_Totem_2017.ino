@@ -3,7 +3,7 @@
 #define SERIAL_DEBUG_DISABLE
 
 #define NUM_PIXELS 81
-#define NUM_COLORS 4
+#define NUM_COLORS 5
 unsigned long interval=5, lastInterval;  // the time we need to wait
 unsigned long previousMillis=0;
 
@@ -42,6 +42,7 @@ typedef enum {
    RAINBOW,
    LOCATE,
    THEATERCHASE,
+   SCANNER,
    NONE
 } tStrandPattern;
 
@@ -120,6 +121,7 @@ void setup(){
    colorArray[1] = strip.Color(0,0,255);
    colorArray[2] = strip.Color(128,128,0);
    colorArray[3] = strip.Color(0,255,0);
+   colorArray[4] = strip.Color(0,0,0); //Dummy cuz I am lazy
 
 
    currentColor = colorArray[0];
@@ -190,6 +192,15 @@ void loop(){
 
 }
 
+void updateColor(){
+      currentColor = colorArray[(++colorCounter%NUM_COLORS)];
+      if(colorCounter%NUM_COLORS==(NUM_COLORS-1))
+      {
+         currentColor = Wheel(random(255));
+      }
+}
+
+
 void updatePattern(){
    switch (strandPattern) {
       case COLORWIPE:
@@ -206,6 +217,10 @@ void updatePattern(){
          break;
       case THEATERCHASE:
          theaterChase();
+         break;
+      case SCANNER:
+         scannerUpdate();
+         break;
       default:
          break;
    }
@@ -269,7 +284,7 @@ void centerOut(){
       clearStrand();
       modeState = 0;
       interval = 20;
-      currentColor = colorArray[(++colorCounter%NUM_COLORS)];
+      updateColor();
 #if defined ( SERIAL_DEBUG_ENABLE )
       Serial.print("Locate Cnt: ");
       Serial.println(counter);
@@ -293,7 +308,7 @@ void colorWipe(){
    if(currentPixel++ >= NUM_PIXELS){
       currentPixel = 0;
       counter++;
-      currentColor = colorArray[(++colorCounter%NUM_COLORS)];
+      updateColor();
    }
    if(counter >= 20){
 #if defined ( SERIAL_DEBUG_ENABLE )
@@ -347,15 +362,77 @@ void theaterChase() {
    if(currentPixel>=NUM_PIXELS){
       counter++;
       currentPixel=0;
-      currentColor = colorArray[(++colorCounter%NUM_COLORS)];
+      updateColor();
+   }
+   if(counter>=10){
+      counter=0;
+      strandPattern = SCANNER;
+      interval=20;
+   }
+}
+
+void scannerUpdate(){
+   static uint16_t counter = 0;
+   const uint8_t TotalSteps = (NUM_PIXELS - 1) * 2;
+   for (int i = 0; i < TotalSteps; i++)
+   {
+      if (i == currentPixel)  // Scan Pixel to the right
+      {
+         strip.setPixelColor(i, currentColor);
+      }
+      else if (i == TotalSteps - currentPixel) // Scan Pixel to the left
+      {
+         strip.setPixelColor(i, currentColor);
+      }
+      else // Fading tail
+      {
+         strip.setPixelColor(i, DimColor(strip.getPixelColor(i)));
+      }
+   }
+   strip.show();
+   currentPixel++;
+   if(currentPixel>=TotalSteps){
+      counter++;
+      currentPixel=0;
+      updateColor();
    }
    if(counter>=10){
       counter=0;
       strandPattern = COLORWIPE;
       interval=10;
    }
+#if defined ( SERIAL_DEBUG_ENABLE )
+   Serial.print("counter: ");
+   Serial.println(counter);
+   Serial.print("currentPixel: ");
+   Serial.println(currentPixel);
+#endif
 }
 
+uint32_t DimColor(uint32_t color)
+{
+   // Shift R, G and B components one bit to the right
+   uint32_t dimColor = strip.Color(Red(color) >> 1, Green(color) >> 1, Blue(color) >> 1);
+   return dimColor;
+}
+
+// Returns the Red component of a 32-bit color
+uint8_t Red(uint32_t color)
+{
+   return (color >> 16) & 0xFF;
+}
+
+// Returns the Green component of a 32-bit color
+uint8_t Green(uint32_t color)
+{
+   return (color >> 8) & 0xFF;
+}
+
+// Returns the Blue component of a 32-bit color
+uint8_t Blue(uint32_t color)
+{
+   return color & 0xFF;
+}
 
 // Input a value 0 to 255 to get a color value.
 // // The colours are a transition r - g - b - back to r.
