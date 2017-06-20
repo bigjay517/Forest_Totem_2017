@@ -41,6 +41,7 @@ typedef enum {
    COLORWIPE,
    RAINBOW,
    LOCATE,
+   THEATERCHASE,
    NONE
 } tStrandPattern;
 
@@ -203,6 +204,8 @@ void updatePattern(){
       case LOCATE:
          centerOut();
          break;
+      case THEATERCHASE:
+         theaterChase();
       default:
          break;
    }
@@ -315,8 +318,8 @@ void rainbowCycle() {
    Serial.println(counter);
 #endif
    if(counter++ >= 256*5){
-      strandPattern = COLORWIPE;
-      interval = 10;
+      strandPattern = THEATERCHASE;
+      interval = 50;
       counter = 0;
 #if defined ( SERIAL_DEBUG_ENABLE )
       Serial.println("Rainbow Reset!");
@@ -324,6 +327,35 @@ void rainbowCycle() {
    }
 
 }
+
+//Theatre-style crawling lights.
+void theaterChase() {
+   static uint16_t counter = 0;
+   for(int i=0; i< NUM_PIXELS; i++)
+   {
+      if ((i + currentPixel) % 3 == 0)
+      {
+         strip.setPixelColor(i, currentColor);
+      }
+      else
+      {
+         strip.setPixelColor(i, 0);
+      }
+   }
+   strip.show();
+   currentPixel++;
+   if(currentPixel>=NUM_PIXELS){
+      counter++;
+      currentPixel=0;
+      currentColor = colorArray[(++colorCounter%NUM_COLORS)];
+   }
+   if(counter>=10){
+      counter=0;
+      strandPattern = COLORWIPE;
+      interval=10;
+   }
+}
+
 
 // Input a value 0 to 255 to get a color value.
 // // The colours are a transition r - g - b - back to r.
